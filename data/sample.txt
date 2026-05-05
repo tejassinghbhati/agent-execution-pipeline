@@ -1,0 +1,34 @@
+OpenClaw Agent Execution Pipeline — Sample Data File
+=====================================================
+
+This file is used to test the fileReader tool.
+
+Project: OpenClaw
+Author:  Tejas Singh Bhati
+Status:  Active Development
+
+Modules Completed:
+  1. CLI Task Manager         — SQLite-backed persistent task storage
+  2. Multi-Platform Bot       — Discord + Telegram message normalization
+  3. Runtime Extension Engine — Hot-loadable skill plugins via Node.js vm
+  4. Agent Execution Pipeline — LLM orchestration with tool use (this module)
+
+Upcoming Modules:
+  - Memory Layer              — Long-term context persistence for the agent
+  - Skill Graph               — Composable skill chains from the Runtime Engine
+  - Reasoning Engine          — Chain-of-thought and planning over multi-step tasks
+
+Tech Stack:
+  - Runtime:  Node.js v18+
+  - LLM:      Anthropic Claude (claude-3-5-haiku)
+  - Tools:    mathjs (calculator), fs/promises (fileReader), Brave API (webSearch)
+  - Platforms: Discord, Telegram
+  - Storage:  SQLite (task manager), in-memory (agent loop)
+
+To run the agent:
+  $ node index.js
+
+Sample questions to ask the agent:
+  > What is 2^20?
+  > Read the file sample.txt and summarize it
+  > What is the latest Node.js LTS version?
