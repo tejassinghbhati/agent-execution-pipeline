@@ -1,0 +1,25 @@
+{
+  "name": "openclaw-agent-execution-pipeline",
+  "version": "1.0.0",
+  "description": "OpenClaw core orchestration loop — natural language to tool execution to composed answer",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "keywords": [
+    "openclaw",
+    "agent",
+    "llm",
+    "function-calling",
+    "tool-use"
+  ],
+  "author": "Tejas Singh Bhati",
+  "license": "ISC",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.1",
+    "dotenv": "^16.4.5",
+    "mathjs": "^15.2.0"
+  }
+}
