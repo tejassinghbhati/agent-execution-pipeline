@@ -20,6 +20,7 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.30.1",
     "dotenv": "^16.4.5",
-    "mathjs": "^15.2.0"
+    "mathjs": "^15.2.0",
+    "uuid": "^9.0.1"
   }
 }

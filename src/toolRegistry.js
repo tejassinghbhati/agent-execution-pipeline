@@ -14,14 +14,17 @@
  * Nothing else in the codebase needs to change.
  */
 
-const calculator = require('./tools/calculator');
-const fileReader = require('./tools/fileReader');
-const webSearch  = require('./tools/webSearch');
+const calculator    = require('./tools/calculator');
+const fileReader    = require('./tools/fileReader');
+const webSearch     = require('./tools/webSearch');
+const rememberFact  = require('./tools/rememberFact');
+const recallMemory  = require('./tools/recallMemory');
+const forgetMemory  = require('./tools/forgetMemory');
 
 // ---------------------------------------------------------------------------
 // Tool registry — order determines priority in case of naming conflicts
 // ---------------------------------------------------------------------------
-const TOOLS = [calculator, fileReader, webSearch];
+const TOOLS = [calculator, fileReader, webSearch, rememberFact, recallMemory, forgetMemory];
 
 // Build an O(1) lookup map: tool name → tool object
 const TOOL_MAP = new Map(TOOLS.map((t) => [t.name, t]));

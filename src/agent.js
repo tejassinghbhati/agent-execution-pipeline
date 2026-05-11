@@ -1,8 +1,21 @@
 'use strict';
 
 require('dotenv').config();
+const path      = require('path');
 const Anthropic = require('@anthropic-ai/sdk');
+const { v4: uuidv4 } = require('uuid');
 const { getToolSchemas, dispatch, listTools } = require('./toolRegistry');
+
+// Memory Substrate — loaded from sibling project directory
+const SUBSTRATE_PATH = path.resolve(__dirname, '../../Cogntive Memory Substrate');
+let memoryManager = null;
+try {
+  memoryManager = require(path.join(SUBSTRATE_PATH, 'src/memoryManager'));
+} catch (_) {
+  // Memory substrate not installed — agent runs without memory
+  console.warn('\u26a0️  [Memory] Cognitive Memory Substrate not found. Running without persistent memory.');
+  console.warn('   Install it: cd "Cogntive Memory Substrate" && npm install');
+}
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -59,17 +72,38 @@ const log = {
  * Runs the OpenClaw agent against a single user query.
  *
  * The loop:
- *   1. Sends the user message + tool schemas to Claude.
- *   2. If Claude returns a tool_use block → execute the tool → feed result back.
- *   3. If Claude returns a text block → return the final answer.
- *   4. Repeat up to MAX_ITERATIONS to support multi-step tool chains.
+ *   1. Injects relevant persistent memories into the system prompt.
+ *   2. Sends the user message + tool schemas to Claude.
+ *   3. If Claude returns a tool_use block → execute the tool → feed result back.
+ *   4. If Claude returns a text block → return the final answer.
+ *   5. Repeat up to MAX_ITERATIONS to support multi-step tool chains.
  *
  * @param {string} userMessage - The raw natural language input from the user
+ * @param {string} [sessionId] - Session UUID for episodic memory grouping
  * @returns {Promise<string>} - The final composed answer
  */
-async function runAgent(userMessage) {
+async function runAgent(userMessage, sessionId = uuidv4()) {
   log.agent(`Processing: "${userMessage}"`);
   log.agent(`Tools available: [${listTools().join(', ')}]`);
+
+  // ── Memory context injection ─────────────────────────────────────────────
+  let dynamicSystemPrompt = SYSTEM_PROMPT;
+  if (memoryManager) {
+    try {
+      const memContext = await memoryManager.injectContext(userMessage, sessionId);
+      if (memContext.trim()) {
+        dynamicSystemPrompt = SYSTEM_PROMPT + '\n' + memContext;
+        log.agent('Memory context injected into system prompt.');
+      }
+    } catch (err) {
+      log.warn(`Memory context injection failed: ${err.message}`);
+    }
+
+    // Log the user's turn to episodic store
+    try {
+      memoryManager.logConversation(sessionId, 'user', userMessage);
+    } catch (_) {}
+  }
 
   // Build the conversation history — starts with just the user message
   /** @type {Array<import('@anthropic-ai/sdk').MessageParam>} */
@@ -88,7 +122,7 @@ async function runAgent(userMessage) {
       response = await client.messages.create({
         model:      MODEL,
         max_tokens: 1024,
-        system:     SYSTEM_PROMPT,
+        system:     dynamicSystemPrompt,   // ← memory-enriched system prompt
         tools:      getToolSchemas(),
         messages,
       });
@@ -108,8 +142,14 @@ async function runAgent(userMessage) {
     if (stop_reason === 'end_turn') {
       // Claude finished — extract the final text answer
       const textBlock = content.find((b) => b.type === 'text');
-      const answer = textBlock ? textBlock.text : '(No text response from model)';
+      const answer    = textBlock ? textBlock.text : '(No text response from model)';
       log.answer(answer);
+
+      // Log the assistant's final response to episodic memory
+      if (memoryManager) {
+        try { memoryManager.logConversation(sessionId, 'assistant', answer); } catch (_) {}
+      }
+
       return answer;
     }
 
